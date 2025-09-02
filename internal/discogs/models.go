@@ -52,17 +52,17 @@ func (a *Artist) ToRecord() []any {
 }
 
 func (a *Artist) ToAliasesRecords() [][]any {
-	records := make([][]any, 0)
-	for _, alias := range a.Aliases {
-		records = append(records, []any{a.ID, alias.ID})
+	records := make([][]any, len(a.Aliases))
+	for i := range a.Aliases {
+		records[i] = []any{a.Aliases[i].ID, a.Aliases[i].ID}
 	}
 	return records
 }
 
 func (a *Artist) ToMembershipsRecords() [][]any {
-	records := make([][]any, 0)
-	for _, member := range a.Members {
-		records = append(records, []any{a.ID, member.ID})
+	records := make([][]any, len(a.Members))
+	for i := range a.Members {
+		records[i] = []any{a.Members[i].ID, a.Members[i].ID}
 	}
 	return records
 }
@@ -154,15 +154,15 @@ func (m *Master) ToRecord() []any {
 }
 
 func (m *Master) ToArtistsRecords() [][]any {
-	artists := make([][]any, 0)
-	for _, artist := range m.Artists {
-		artists = append(artists, []any{
+	artists := make([][]any, len(m.Artists))
+	for i := range m.Artists {
+		artists[i] = []any{
 			m.ID,
-			artist.ID,
-			artist.Name,
-			artist.Anv,
-			artist.Join,
-		})
+			m.Artists[i].ID,
+			m.Artists[i].Name,
+			m.Artists[i].Anv,
+			m.Artists[i].Join,
+		}
 	}
 
 	return artists
@@ -240,15 +240,15 @@ func (r Release) LabelsColumns() []string {
 }
 
 func (r *Release) ToArtistsRecords() [][]any {
-	artists := make([][]any, 0)
-	for _, artist := range r.Artists {
-		artists = append(artists, []any{
+	artists := make([][]any, len(r.Artists))
+	for i := range r.Artists {
+		artists[i] = []any{
 			r.ID,
-			artist.ID,
-			artist.Name,
-			artist.Anv,
-			artist.Join,
-		})
+			r.Artists[i].ID,
+			r.Artists[i].Name,
+			r.Artists[i].Anv,
+			r.Artists[i].Join,
+		}
 	}
 
 	return artists
@@ -282,29 +282,29 @@ func (r *Release) ToRecord() []any {
 }
 
 func (r *Release) ToExtraArtistsRecords() [][]any {
-	extraArtists := make([][]any, 0)
-	for _, artist := range r.ExtraArtists {
-		extraArtists = append(extraArtists, []any{
+	extraArtists := make([][]any, len(r.ExtraArtists))
+	for i := range r.ExtraArtists {
+		extraArtists[i] = []any{
 			r.ID,
-			artist.ID,
-			artist.Name,
-			artist.Anv,
-			artist.Role,
-		})
+			r.ExtraArtists[i].ID,
+			r.ExtraArtists[i].Name,
+			r.ExtraArtists[i].Anv,
+			r.ExtraArtists[i].Role,
+		}
 	}
 
 	return extraArtists
 }
 
 func (r *Release) ToLabelsRecords() [][]any {
-	labels := make([][]any, 0)
-	for _, label := range r.Labels {
-		labels = append(labels, []any{
+	labels := make([][]any, len(r.Labels))
+	for i := range r.Labels {
+		labels[i] = []any{
 			r.ID,
-			label.ID,
-			label.Name,
-			label.Catno,
-		})
+			r.Labels[i].ID,
+			r.Labels[i].Name,
+			r.Labels[i].Catno,
+		}
 	}
 
 	return labels

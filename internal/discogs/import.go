@@ -145,7 +145,6 @@ func (ds *CopyFromDump) Next() bool {
 	}
 	ds.err = nil
 
-	// TODO: handle the decodedElement
 	switch ds.mode {
 	case ModeArtists:
 		ds.records = [][]any{decodedElement.(*Artist).ToRecord()}
@@ -169,7 +168,6 @@ func (ds *CopyFromDump) Next() bool {
 		ds.records = decodedElement.(*Release).ToLabelsRecords()
 	}
 
-	// If there are no
 	if len(ds.records) == 0 {
 		return ds.Next()
 	}
