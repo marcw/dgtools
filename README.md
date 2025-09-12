@@ -37,11 +37,15 @@ dgtools dump list [options]
 Dump the structure of an XML file.
 
 ```
-dgtools dump structure <file>
+dgtools dump structure <file> [options]
 ```
 
 **Arguments:**
 - `file` - The file to dump the structure of
+
+**Options:**
+- `--stop-after X` - Stops analysis after X records
+
 
 #### dump download
 
@@ -54,10 +58,27 @@ dgtools dump download [options] <name>
 **Arguments:**
 - `name` - The file to download
 
+
 **Options:**
 - `--out-dir` - The output directory (default: ".")
 - `--overwrite` - Force the download even if the file already exists
 - `--checksum` - Check the checksum of the file after downloading (default: true)
+
+#### dump convert
+
+Convert a dump to a different format
+
+```
+dgtools dump convert <name> --out <name> [options]
+```
+
+**Arguments:**
+- `name` - The file to convert
+
+**Options:**
+- `--out` - The output file
+- `--stop-after X` - Stop conversion after X records
+
 
 ### db
 
