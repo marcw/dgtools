@@ -61,13 +61,13 @@ var dbImportCmd = &cli.Command{
 		now := time.Now()
 		CopyDiscogsDumpSinglePass(pool, file, modes)
 
-		log.Printf("Processed dump in %s.\n", time.Since(now))
+		fmt.Printf("Processed dump in %s.\n", time.Since(now))
 		return nil
 	},
 }
 
 func CopyDiscogsDump(conn *pgx.Conn, filename string, mode int) (n int64, err error) {
-	log.Printf("Processing %s in mode %d.\n", filename, mode)
+	fmt.Printf("Processing %s in mode %d.\n", filename, mode)
 	now := time.Now()
 	var ds *discogs.CopyFromDump
 
