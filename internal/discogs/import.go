@@ -184,43 +184,7 @@ func (ds *CopyFromDump) Values() (value []any, err error) {
 }
 
 func (ds *CopyFromDump) decodeXML() (any, error) {
-	for {
-		t, err := ds.decoder.Token()
-		if err == io.EOF {
-			return nil, nil
-		}
-
-		if err != nil {
-			return nil, err
-		}
-
-		// Inspect the type of the token just read.
-		switch se := t.(type) {
-		case xml.StartElement:
-			inElement := se.Name.Local
-			if inElement == "artist" {
-				artist := &Artist{}
-				ds.decoder.DecodeElement(artist, &se)
-				return artist, nil
-			}
-			if inElement == "label" {
-				label := &Label{}
-				ds.decoder.DecodeElement(label, &se)
-				return label, nil
-			}
-			if inElement == "master" {
-				master := &Master{}
-				ds.decoder.DecodeElement(master, &se)
-				return master, nil
-			}
-			if inElement == "release" {
-				release := &Release{}
-				ds.decoder.DecodeElement(release, &se)
-				return release, nil
-			}
-		default:
-		}
-	}
+	return ds.dd.DecodeNextElement()
 }
 
 // CopyFromRecordChannel implements pgx.CopyFromSource for channel-based data
@@ -295,43 +259,26 @@ func (p *MultiTableXMLParser) ParseAndDistribute() error {
 	}()
 
 	for {
-		t, err := p.dd.Decoder.Token()
+		element, err := p.dd.DecodeNextElement()
 		if err == io.EOF {
 			return nil
 		}
 		if err != nil {
 			return err
 		}
+		if element == nil {
+			continue
+		}
 
-		switch se := t.(type) {
-		case xml.StartElement:
-			inElement := se.Name.Local
-			switch inElement {
-			case "artist":
-				artist := &Artist{}
-				if err := p.dd.Decoder.DecodeElement(artist, &se); err != nil {
-					return err
-				}
-				p.distributeArtistRecords(artist)
-			case "label":
-				label := &Label{}
-				if err := p.dd.Decoder.DecodeElement(label, &se); err != nil {
-					return err
-				}
-				p.distributeLabelRecords(label)
-			case "master":
-				master := &Master{}
-				if err := p.dd.Decoder.DecodeElement(master, &se); err != nil {
-					return err
-				}
-				p.distributeMasterRecords(master)
-			case "release":
-				release := &Release{}
-				if err := p.dd.Decoder.DecodeElement(release, &se); err != nil {
-					return err
-				}
-				p.distributeReleaseRecords(release)
-			}
+		switch e := element.(type) {
+		case *Artist:
+			p.distributeArtistRecords(e)
+		case *Label:
+			p.distributeLabelRecords(e)
+		case *Master:
+			p.distributeMasterRecords(e)
+		case *Release:
+			p.distributeReleaseRecords(e)
 		}
 	}
 }

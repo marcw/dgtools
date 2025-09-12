@@ -73,6 +73,50 @@ func OpenDumpFile(filename string) (*Dump, error) {
 	return dd, nil
 }
 
+func (dd *Dump) DecodeNextElement() (any, error) {
+	t, err := dd.Decoder.Token()
+	if err == io.EOF {
+		return nil, err
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	switch se := t.(type) {
+	case xml.StartElement:
+		inElement := se.Name.Local
+		switch inElement {
+		case "artist":
+			artist := &Artist{}
+			if err := dd.Decoder.DecodeElement(artist, &se); err != nil {
+				return nil, err
+			}
+			return artist, nil
+		case "label":
+			label := &Label{}
+			if err := dd.Decoder.DecodeElement(label, &se); err != nil {
+				return nil, err
+			}
+			return label, nil
+		case "master":
+			master := &Master{}
+			if err := dd.Decoder.DecodeElement(master, &se); err != nil {
+				return nil, err
+			}
+			return master, nil
+		case "release":
+			release := &Release{}
+			if err := dd.Decoder.DecodeElement(release, &se); err != nil {
+				return nil, err
+			}
+
+			return release, nil
+		}
+	}
+
+	return nil, nil
+}
+
 // Close closes the dump file.
 func (dd *Dump) Close() error {
 	if dd.gzReader != nil {
