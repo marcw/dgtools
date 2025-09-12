@@ -1,1 +1,3 @@
 dgtools
+*.parquet
+*.xml.gz

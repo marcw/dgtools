@@ -9,5 +9,6 @@ var dumpCmd = &cli.Command{
 		discogsDumpListCmd,
 		discogsDumpStructureCmd,
 		discogsDumpDownloadCmd,
+		discogsDumpConvertCmd,
 	},
 }
