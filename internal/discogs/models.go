@@ -459,11 +459,11 @@ type masterID struct {
 }
 
 type SubTrack struct {
-	Position     *string        `xml:"position" parquet:"position,dict"`
-	Title        string         `xml:"title" parquet:"title,zstd"`
-	Duration     *string        `xml:"duration" parquet:"duration,zstd"`
-	Artists      []*Artist      `xml:"artists>artist" parquet:"artists"`
-	ExtraArtists []*ExtraArtist `xml:"extraartists>artist" parquet:"extra_artists"`
+	Position     *string         `xml:"position" parquet:"position,dict"`
+	Title        string          `xml:"title" parquet:"title,zstd"`
+	Duration     *string         `xml:"duration" parquet:"duration,zstd"`
+	Artists      []*MasterArtist `xml:"artists>artist" parquet:"artists"`
+	ExtraArtists []*ExtraArtist  `xml:"extraartists>artist" parquet:"extra_artists"`
 }
 
 func (t *SubTrack) clean() {
@@ -482,12 +482,12 @@ func (t *SubTrack) clean() {
 }
 
 type Track struct {
-	Position     *string        `xml:"position" parquet:"position,dict"`
-	Title        string         `xml:"title" parquet:"title,zstd"`
-	Duration     *string        `xml:"duration" parquet:"duration,zstd"`
-	Artists      []*Artist      `xml:"artists>artist" parquet:"artists"`
-	ExtraArtists []*ExtraArtist `xml:"extraartists>artist" parquet:"extra_artists"`
-	SubTracks    []*SubTrack    `xml:"sub_tracks>track" parquet:"sub_tracks"`
+	Position     *string         `xml:"position" parquet:"position,dict"`
+	Title        string          `xml:"title" parquet:"title,zstd"`
+	Duration     *string         `xml:"duration" parquet:"duration,zstd"`
+	Artists      []*MasterArtist `xml:"artists>artist" parquet:"artists"`
+	ExtraArtists []*ExtraArtist  `xml:"extraartists>artist" parquet:"extra_artists"`
+	SubTracks    []*SubTrack     `xml:"sub_tracks>track" parquet:"sub_tracks"`
 }
 
 func (t *Track) clean() {
