@@ -44,6 +44,7 @@ type xmlStructure struct {
 
 // structureAnalyzer handles the parsing and analysis
 type structureAnalyzer struct {
+	stopAfter int64
 	structure *xmlStructure
 	stack     []*node // current path in the tree
 }
@@ -68,6 +69,7 @@ func (s *structureAnalyzer) ParseXML(reader io.Reader) error {
 	decoder := xml.NewDecoder(reader)
 	s.stack = append(s.stack, s.structure.root)
 
+	i := int64(0)
 	for {
 		token, err := decoder.Token()
 		if err == io.EOF {
@@ -80,8 +82,17 @@ func (s *structureAnalyzer) ParseXML(reader io.Reader) error {
 		switch se := token.(type) {
 		case xml.StartElement:
 			s.processStartElement(se)
+			i++
 		case xml.EndElement:
 			s.processEndElement(se)
+		}
+
+		if s.stopAfter == 0 {
+			continue
+		}
+
+		if i >= s.stopAfter {
+			break
 		}
 	}
 
@@ -160,12 +171,20 @@ var discogsDumpStructureCmd = &cli.Command{
 			UsageText: "The file to dump the structure of",
 		},
 	},
+	Flags: []cli.Flag{
+		&cli.Int64Flag{
+			Name:  "stop-after",
+			Usage: "Stop after the given number of elements",
+			Value: 10000000,
+		},
+	},
 	Action: func(ctx context.Context, cmd *cli.Command) error {
 		if cmd.StringArg("file") == "" {
 			return fmt.Errorf("file is required")
 		}
 
 		analyzer := NewstructureAnalyzer()
+		analyzer.stopAfter = cmd.Int64("stop-after")
 		dd, err := discogs.OpenDumpFile(cmd.StringArg("file"))
 		if err != nil {
 			return err
