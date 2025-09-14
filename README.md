@@ -1,6 +1,13 @@
 # dgtools
 
-A command line utility to work with the Discogs data dumps. Download dumps, convert them to parquet, import them into a PostgreSQL database, get the XML structure of a dump, etc...
+A command line utility to work with the Discogs data dumps.
+
+It makes it super easy to:
+
+- List data dumps
+- Download a specific dumps
+- Convert dumps to ndjson or parquet
+- Import a dump into a PostgreSQL database
 
 ## Usage
 
