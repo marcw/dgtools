@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -11,6 +12,11 @@ import (
 	"github.com/marcw/dgtools/internal/discogs"
 	"github.com/parquet-go/parquet-go"
 	"github.com/urfave/cli/v3"
+)
+
+const (
+	FormatParquet = "parquet"
+	FormatNdjson  = "ndjson"
 )
 
 var discogsDumpConvertCmd = &cli.Command{
@@ -25,29 +31,52 @@ var discogsDumpConvertCmd = &cli.Command{
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:  "format",
-			Usage: "The output format",
-			Value: "parquet",
+			Usage: "Sets the output format for the conversion",
+			Value: FormatParquet,
+			Action: func(ctx context.Context, cmd *cli.Command, s string) error {
+				if s != FormatParquet && s != FormatNdjson {
+					return fmt.Errorf("supported formats are: %s, %s", FormatParquet, FormatNdjson)
+				}
+				return nil
+			},
+		},
+		&cli.BoolFlag{
+			Name:  "no-progress",
+			Usage: "Don't show any progress bar",
+			Value: false,
 		},
 		&cli.StringFlag{
 			Name:  "out",
-			Usage: "Force the download even if the file already exists",
+			Usage: "Save the converted output to file",
 		},
 		&cli.Int64Flag{
 			Name:  "stop-after",
-			Usage: "The mode to convert",
+			Usage: "Stop conversion after X records",
 			Value: 0,
 		},
 	},
 	Action: func(ctx context.Context, cmd *cli.Command) error {
-		outputFile := cmd.String("out")
 		outputFormat := cmd.String("format")
-		if outputFormat != "parquet" {
-			return fmt.Errorf("only the parquet format is supported right now.")
-		}
-
+		outputFile := cmd.String("out")
 		inputFile := cmd.StringArg("name")
+		noProgress := cmd.Bool("no-progress")
+
+		i := int64(0)
+		var outFile *os.File
+		var parquetWriter *parquet.Writer
+
+		// First, we validate the arguments and flags.
 		if inputFile == "" {
 			return fmt.Errorf("input file is required")
+		}
+
+		// do not output binary things to stdout
+		if outputFormat == FormatParquet && outputFile == "" {
+			return fmt.Errorf("output file is required for parquet format conversion")
+		}
+		// if we convert to ndjson, we don't output progress
+		if outputFormat == FormatNdjson && outputFile == "" {
+			noProgress = true
 		}
 
 		dump, err := discogs.OpenDumpFile(inputFile)
@@ -56,25 +85,27 @@ var discogsDumpConvertCmd = &cli.Command{
 		}
 		defer dump.Close()
 
-		if outputFile == "" {
-			return fmt.Errorf("output file is required")
+		if outputFile != "" {
+			outFile, err := os.Create(outputFile)
+			if err != nil {
+				return err
+			}
+			defer outFile.Close()
+		} else {
+			outFile = os.Stdout
 		}
 
-		outFile, err := os.Create(cmd.String("out"))
-		if err != nil {
-			return err
+		if outputFormat == FormatParquet {
+			parquetWriter := parquet.NewWriter(outFile)
+			defer parquetWriter.Close()
 		}
-		defer outFile.Close()
-		writer := parquet.NewWriter(outFile)
-		defer writer.Close()
 
-		i := int64(0)
 		s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
-		s.Suffix = " Converting..."
-		s.Start()
-
+		if !noProgress {
+			s.Suffix = " Converting..."
+			s.Start()
+		}
 		now := time.Now()
-
 		for {
 			element, err := dump.DecodeNextElement()
 			if err == io.EOF {
@@ -87,23 +118,53 @@ var discogsDumpConvertCmd = &cli.Command{
 				continue
 			}
 
-			if err := writer.Write(element); err != nil {
-				return err
+			switch outputFormat {
+			case FormatParquet:
+				if err := parquetWriter.Write(element); err != nil {
+					return err
+				}
+			case FormatNdjson:
+				b, err := json.Marshal(element)
+				if err != nil {
+					return err
+				}
+				if _, err := outFile.Write(b); err != nil {
+					return err
+				}
+				if _, err := outFile.Write([]byte("\n")); err != nil {
+					return err
+				}
 			}
 
 			i++
 			if cmd.Int64("stop-after") != 0 && i >= cmd.Int64("stop-after") {
 				break
 			}
-			if i%1000 == 0 {
+			if !noProgress && i%1000 == 0 {
 				s.Suffix = fmt.Sprintf(" Converting... %d", i)
 			}
 		}
-		if err := writer.Flush(); err != nil {
-			return err
+
+		switch outputFormat {
+		case FormatParquet:
+			if err := parquetWriter.Flush(); err != nil {
+				return err
+			}
+		case FormatNdjson:
+			if _, err := outFile.Write([]byte("\n")); err != nil {
+				return err
+			}
+			if outFile != os.Stdout {
+				if err := outFile.Sync(); err != nil {
+					return err
+				}
+			}
 		}
-		s.Stop()
-		fmt.Printf("Converted %d rows in %s.\n", i, time.Since(now))
+
+		if !noProgress {
+			s.Stop()
+			fmt.Printf("Converted %d rows in %s.\n", i, time.Since(now))
+		}
 
 		return nil
 	},

@@ -4,23 +4,41 @@ import (
 	"encoding/xml"
 )
 
-type Artist struct {
-	ID          int64   `xml:"id" parquet:"id,zstd"`
-	Name        string  `xml:"name" parquet:"name,zstd"`
-	RealName    *string `xml:"realname" parquet:"real_name,zstd"`
-	Profile     *string `xml:"profile" parquet:"profile,zstd"`
-	DataQuality string  `xml:"data_quality" parquet:"data_quality,dict"`
+type artist struct {
+	ID          int64   `xml:"id" json:"id" parquet:"id,zstd"`
+	Name        string  `xml:"name" json:"name" parquet:"name,zstd"`
+	RealName    *string `xml:"realname" json:"real_name" parquet:"real_name,zstd"`
+	Profile     *string `xml:"profile" json:"profile" parquet:"profile,zstd"`
+	DataQuality string  `xml:"data_quality" json:"data_quality" parquet:"data_quality,dict"`
 
-	URLs           []string `xml:"urls>url" parquet:"urls,zstd"`
-	Aliases        []*Name  `xml:"aliases>name" parquet:"aliases"`
-	NameVariations []string `xml:"namevariations>name" parquet:"name_variations,zstd"`
-	Members        []*Name  `xml:"members>name" parquet:"members"`
-	Groups         []*Name  `xml:"groups>name" parquet:"groups"`
+	URLs           []string `xml:"urls>url" json:"urls" parquet:"urls,zstd"`
+	Aliases        []*Name  `xml:"aliases>name" json:"aliases" parquet:"aliases"`
+	NameVariations []string `xml:"namevariations>name" json:"name_variations" parquet:"name_variations,zstd"`
+	Members        []*Name  `xml:"members>name" json:"members" parquet:"members"`
+	Groups         []*Name  `xml:"groups>name" json:"groups" parquet:"groups"`
+}
+
+type Artist struct {
+	artist
 }
 
 type Name struct {
-	ID   int64  `xml:"id,attr" parquet:"id,zstd"`
-	Name string `xml:",chardata" parquet:"name,zstd"`
+	ID   int64  `xml:"id,attr" json:"id" parquet:"id,zstd"`
+	Name string `xml:",chardata" json:"name" parquet:"name,zstd"`
+}
+
+func (a *Artist) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+	var temp struct {
+		artist
+	}
+
+	if err := d.DecodeElement(&temp, &start); err != nil {
+		return err
+	}
+
+	a.artist = temp.artist
+	a.clean()
+	return nil
 }
 
 func (a Artist) Columns() []string {
@@ -81,18 +99,18 @@ func (a *Artist) ToMembershipsRecords() [][]any {
 }
 
 type label struct {
-	ID          int64       `xml:"id" parquet:"id,zstd"`
-	Name        string      `xml:"name" parquet:"name,zstd"`
-	ContactInfo *string     `xml:"contactinfo" parquet:"contact_info,zstd"`
-	Profile     *string     `xml:"profile" parquet:"profile,zstd"`
-	DataQuality string      `xml:"data_quality" parquet:"data_quality,dict"`
-	URLs        []string    `xml:"urls>url" parquet:"urls,zstd"`
-	SubLabels   []*SubLabel `xml:"sublabels>label" parquet:"sub_labels"`
+	ID          int64       `xml:"id" json:"id" parquet:"id,zstd"`
+	Name        string      `xml:"name" json:"name" parquet:"name,zstd"`
+	ContactInfo *string     `xml:"contactinfo" json:"contact_info" parquet:"contact_info,zstd"`
+	Profile     *string     `xml:"profile" json:"profile" parquet:"profile,zstd"`
+	DataQuality string      `xml:"data_quality" json:"data_quality" parquet:"data_quality,dict"`
+	URLs        []string    `xml:"urls>url" json:"urls" parquet:"urls,zstd"`
+	SubLabels   []*SubLabel `xml:"sublabels>label" json:"sub_labels" parquet:"sub_labels"`
 }
 
 type Label struct {
 	label
-	ParentLabelID *int64 `parquet:"parent_label_id,zstd"`
+	ParentLabelID *int64 `json:"parent_label_id" parquet:"parent_label_id,zstd"`
 }
 
 func (l *Label) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
@@ -135,8 +153,8 @@ func (l Label) Columns() []string {
 }
 
 type SubLabel struct {
-	ID   int64  `xml:"id,attr" parquet:"id,zstd"`
-	Name string `xml:",chardata" parquet:"name,zstd"`
+	ID   int64  `xml:"id,attr" json:"id" parquet:"id,zstd"`
+	Name string `xml:",chardata" json:"name" parquet:"name,zstd"`
 }
 
 func (l *Label) ToRecord() []any {
@@ -152,16 +170,16 @@ func (l *Label) ToRecord() []any {
 }
 
 type master struct {
-	ID            int64           `xml:"id,attr" parquet:"id,zstd"`
-	Artists       []*MasterArtist `xml:"artists>artist" parquet:"artists"`
-	MainReleaseID *int64          `xml:"main_release" parquet:"main_release_id,zstd"`
-	DataQuality   string          `xml:"data_quality" parquet:"data_quality,dict"`
-	Videos        []Video         `xml:"videos>video" parquet:"videos"`
-	Title         string          `xml:"title" parquet:"title,zstd"`
-	Year          *int32          `xml:"year" parquet:"year,dict"`
-	Genres        []string        `xml:"genres>genre" parquet:"genres,dict"`
-	Styles        []string        `xml:"styles>style" parquet:"styles,dict"`
-	Notes         *string         `xml:"notes" parquet:"notes,zstd"`
+	ID            int64           `xml:"id,attr" json:"id" parquet:"id,zstd"`
+	Title         string          `xml:"title" json:"title" parquet:"title,zstd"`
+	Year          *int32          `xml:"year" json:"year" parquet:"year,dict"`
+	MainReleaseID *int64          `xml:"main_release" json:"main_release_id" parquet:"main_release_id,zstd"`
+	DataQuality   string          `xml:"data_quality" json:"data_quality" parquet:"data_quality,dict"`
+	Notes         *string         `xml:"notes" json:"notes" parquet:"notes,zstd"`
+	Artists       []*MasterArtist `xml:"artists>artist" json:"artists" parquet:"artists"`
+	Videos        []Video         `xml:"videos>video" json:"videos" parquet:"videos"`
+	Genres        []string        `xml:"genres>genre" json:"genres" parquet:"genres,dict"`
+	Styles        []string        `xml:"styles>style" json:"styles" parquet:"styles,dict"`
 }
 
 type Master struct {
@@ -246,10 +264,10 @@ func (m *Master) ToArtistsRecords() [][]any {
 }
 
 type MasterArtist struct {
-	ID   int64   `xml:"id" parquet:"id,zstd"`
-	Name string  `xml:"name" parquet:"name,zstd"`
-	Anv  *string `xml:"anv" parquet:"name_variation,zstd"`
-	Join *string `xml:"join" parquet:"join,dict"`
+	ID   int64   `xml:"id" json:"id" parquet:"id,zstd"`
+	Name string  `xml:"name" json:"name" parquet:"name,zstd"`
+	Anv  *string `xml:"anv" json:"name_variation" parquet:"name_variation,zstd"`
+	Join *string `xml:"join" json:"join" parquet:"join,dict"`
 }
 
 func (m *MasterArtist) clean() {
@@ -270,25 +288,25 @@ type Video struct {
 }
 
 type release struct {
-	ID          int64   `xml:"id,attr" parquet:"id"`
-	Status      string  `xml:"status,attr" parquet:"status,dict"`
-	Country     *string `xml:"country" parquet:"country,dict"`
-	Released    *string `xml:"released" parquet:"released,dict"`
-	Notes       *string `xml:"notes" parquet:"notes,zstd"`
-	DataQuality string  `xml:"data_quality" parquet:"data_quality,dict"`
-	Title       string  `xml:"title" parquet:"title,zstd"`
+	ID          int64   `xml:"id,attr" json:"id" parquet:"id"`
+	Status      string  `xml:"status,attr" json:"status" parquet:"status,dict"`
+	Country     *string `xml:"country" json:"country" parquet:"country,dict"`
+	Released    *string `xml:"released" json:"released" parquet:"released,dict"`
+	Notes       *string `xml:"notes" json:"notes" parquet:"notes,zstd"`
+	DataQuality string  `xml:"data_quality" json:"data_quality" parquet:"data_quality,dict"`
+	Title       string  `xml:"title" json:"title" parquet:"title,zstd"`
 
-	Artists      []*MasterArtist  `xml:"artists>artist" parquet:"artists"`
-	Companies    []*Company       `xml:"companies>company" parquet:"companies"`
-	ExtraArtists []*ExtraArtist   `xml:"extraartists>artist" parquet:"extra_artists"`
-	Formats      []*ReleaseFormat `xml:"formats>format" parquet:"formats"`
-	Genres       []string         `xml:"genres>genre" parquet:"genres,dict"`
-	Identifiers  []*Identifier    `xml:"identifiers>identifier" parquet:"identifiers"`
-	Labels       []*ReleaseLabel  `xml:"labels>label" parquet:"labels"`
-	Series       []*Serie         `xml:"series>serie" parquet:"series"`
-	Styles       []string         `xml:"styles>style" parquet:"styles,dict"`
-	Tracklist    []*Track         `xml:"tracklist>track" parquet:"tracklist"`
-	Videos       []*Video         `xml:"videos>video" parquet:"videos"`
+	Artists      []*MasterArtist  `xml:"artists>artist" json:"artists" parquet:"artists"`
+	Companies    []*Company       `xml:"companies>company" json:"companies" parquet:"companies"`
+	ExtraArtists []*ExtraArtist   `xml:"extraartists>artist" json:"extra_artists" parquet:"extra_artists"`
+	Formats      []*ReleaseFormat `xml:"formats>format" json:"formats" parquet:"formats"`
+	Genres       []string         `xml:"genres>genre" json:"genres" parquet:"genres,dict"`
+	Identifiers  []*Identifier    `xml:"identifiers>identifier" json:"identifiers" parquet:"identifiers"`
+	Labels       []*ReleaseLabel  `xml:"labels>label" json:"labels" parquet:"labels"`
+	Series       []*Serie         `xml:"series>serie" json:"series" parquet:"series"`
+	Styles       []string         `xml:"styles>style" json:"styles" parquet:"styles,dict"`
+	Tracklist    []*Track         `xml:"tracklist>track" json:"tracklist" parquet:"tracklist"`
+	Videos       []*Video         `xml:"videos>video" json:"videos" parquet:"videos"`
 }
 
 type Release struct {
@@ -459,11 +477,11 @@ type masterID struct {
 }
 
 type SubTrack struct {
-	Position     *string         `xml:"position" parquet:"position,dict"`
-	Title        string          `xml:"title" parquet:"title,zstd"`
-	Duration     *string         `xml:"duration" parquet:"duration,zstd"`
-	Artists      []*MasterArtist `xml:"artists>artist" parquet:"artists"`
-	ExtraArtists []*ExtraArtist  `xml:"extraartists>artist" parquet:"extra_artists"`
+	Position     *string         `xml:"position" json:"position" parquet:"position,dict"`
+	Title        string          `xml:"title" json:"title" parquet:"title,zstd"`
+	Duration     *string         `xml:"duration" json:"duration" parquet:"duration,zstd"`
+	Artists      []*MasterArtist `xml:"artists>artist" json:"artists" parquet:"artists"`
+	ExtraArtists []*ExtraArtist  `xml:"extraartists>artist" json:"extra_artists" parquet:"extra_artists"`
 }
 
 func (t *SubTrack) clean() {
@@ -482,12 +500,12 @@ func (t *SubTrack) clean() {
 }
 
 type Track struct {
-	Position     *string         `xml:"position" parquet:"position,dict"`
-	Title        string          `xml:"title" parquet:"title,zstd"`
-	Duration     *string         `xml:"duration" parquet:"duration,zstd"`
-	Artists      []*MasterArtist `xml:"artists>artist" parquet:"artists"`
-	ExtraArtists []*ExtraArtist  `xml:"extraartists>artist" parquet:"extra_artists"`
-	SubTracks    []*SubTrack     `xml:"sub_tracks>track" parquet:"sub_tracks"`
+	Position     *string         `xml:"position" json:"position" parquet:"position,dict"`
+	Title        string          `xml:"title" json:"title" parquet:"title,zstd"`
+	Duration     *string         `xml:"duration" json:"duration" parquet:"duration,zstd"`
+	Artists      []*MasterArtist `xml:"artists>artist" json:"artists" parquet:"artists"`
+	ExtraArtists []*ExtraArtist  `xml:"extraartists>artist" json:"extra_artists" parquet:"extra_artists"`
+	SubTracks    []*SubTrack     `xml:"sub_tracks>track" json:"sub_tracks" parquet:"sub_tracks"`
 }
 
 func (t *Track) clean() {
@@ -510,9 +528,9 @@ func (t *Track) clean() {
 }
 
 type Identifier struct {
-	Type        string  `xml:"type,attr" parquet:"type,dict"`
-	Description *string `xml:"description,attr" parquet:"description,zstd"`
-	Value       string  `xml:"value,attr" parquet:"value,zstd"`
+	Type        string  `xml:"type,attr" json:"type" parquet:"type,dict"`
+	Description *string `xml:"description,attr" json:"description" parquet:"description,zstd"`
+	Value       string  `xml:"value,attr" json:"value" parquet:"value,zstd"`
 }
 
 func (i *Identifier) clean() {
@@ -522,10 +540,10 @@ func (i *Identifier) clean() {
 }
 
 type ExtraArtist struct {
-	ID   int64   `xml:"id" parquet:"id,zstd"`
-	Name string  `xml:"name" parquet:"name,zstd"`
-	Anv  *string `xml:"anv" parquet:"name_variation,zstd"`
-	Role *string `xml:"role" parquet:"role,dict"`
+	ID   int64   `xml:"id" json:"id" parquet:"id,zstd"`
+	Name string  `xml:"name" json:"name" parquet:"name,zstd"`
+	Anv  *string `xml:"anv" json:"name_variation" parquet:"name_variation,zstd"`
+	Role *string `xml:"role" json:"role" parquet:"role,dict"`
 }
 
 func (e *ExtraArtist) clean() {
@@ -539,9 +557,9 @@ func (e *ExtraArtist) clean() {
 }
 
 type ReleaseLabel struct {
-	ID    int64   `xml:"id,attr" parquet:"id,zstd"`
-	Name  string  `xml:"name,attr" parquet:"name,zstd"`
-	Catno *string `xml:"catno,attr" parquet:"catno,zstd"`
+	ID    int64   `xml:"id,attr" json:"id" parquet:"id,zstd"`
+	Name  string  `xml:"name,attr" json:"name" parquet:"name,zstd"`
+	Catno *string `xml:"catno,attr" json:"catno" parquet:"catno,zstd"`
 }
 
 func (r *ReleaseLabel) clean() {
@@ -551,12 +569,12 @@ func (r *ReleaseLabel) clean() {
 }
 
 type Company struct {
-	ID             int64   `xml:"id" parquet:"id,zstd"`
-	Name           string  `xml:"name" parquet:"name,zstd"`
-	EntityType     int64   `xml:"entity_type" parquet:"entity_type,zstd"`
-	EntityTypeName string  `xml:"entity_type_name" parquet:"entity_type_name,zstd"`
-	ResourceURL    string  `xml:"resource_url" parquet:"resource_url,zstd"`
-	Catno          *string `xml:"catno" parquet:"catno,zstd"`
+	ID             int64   `xml:"id" json:"id" parquet:"id,zstd"`
+	Name           string  `xml:"name" json:"name" parquet:"name,zstd"`
+	EntityType     int64   `xml:"entity_type" json:"entity_type" parquet:"entity_type,zstd"`
+	EntityTypeName string  `xml:"entity_type_name" json:"entity_type_name" parquet:"entity_type_name,zstd"`
+	ResourceURL    string  `xml:"resource_url" json:"resource_url" parquet:"resource_url,zstd"`
+	Catno          *string `xml:"catno" json:"catno" parquet:"catno,zstd"`
 }
 
 func (c *Company) clean() {
@@ -566,16 +584,16 @@ func (c *Company) clean() {
 }
 
 type ReleaseFormat struct {
-	Name         string   `xml:"name,attr" parquet:"name,zstd"`
-	Qty          string   `xml:"qty,attr" parquet:"qty,zstd"`
-	Text         string   `xml:"text,attr" parquet:"text,zstd"`
-	Descriptions []string `xml:"descriptions>description" parquet:"descriptions,zstd"`
+	Name         string   `xml:"name,attr" json:"name" parquet:"name,zstd"`
+	Qty          string   `xml:"qty,attr" json:"qty" parquet:"qty,zstd"`
+	Text         string   `xml:"text,attr" json:"text" parquet:"text,zstd"`
+	Descriptions []string `xml:"descriptions>description" json:"descriptions" parquet:"descriptions,zstd"`
 }
 
 type Serie struct {
-	ID    int64   `xml:"id,attr" parquet:"id,zstd"`
-	Name  string  `xml:"name,attr" parquet:"name,zstd"`
-	Catno *string `xml:"catno,attr" parquet:"catno,zstd"`
+	ID    int64   `xml:"id,attr" json:"id" parquet:"id,zstd"`
+	Name  string  `xml:"name,attr" json:"name" parquet:"name,zstd"`
+	Catno *string `xml:"catno,attr" json:"catno" parquet:"catno,zstd"`
 }
 
 func (s *Serie) clean() {
